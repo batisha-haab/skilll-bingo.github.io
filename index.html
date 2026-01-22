@@ -1,17 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Skill Bingo</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎯 Skill Bingo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
 </head>
 <body>
-  <h1>🎯 Skill Bingo</h1>
-  <p id="timer">Time: 30</p>
-  <div id="grid"></div>
-  <p id="status"></p>
-
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="game.js"></script>
+    <!-- Animated background particles -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Loading overlay -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading Skill Bingo...</div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Skill Bingo</h1>
+            <p class="subtitle">Tap the correct numbers as fast as you can!</p>
+            
+            <div class="game-info">
+                <div class="info-box">
+                    <div class="info-label">MODE</div>
+                    <div class="info-value" id="gameMode">FREE</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">SCORE</div>
+                    <div class="info-value" id="score">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">TIME</div>
+                    <div class="info-value" id="timer">30</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="grid"></div>
+        
+        <div id="status">Tap the number: <span id="targetNumber">0</span></div>
+        
+        <div class="game-mode">
+            Game Mode: <span id="modeDisplay">FREE</span>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="restartGame()">
+                <i class="fas fa-redo"></i> Restart
+            </button>
+            <button class="btn btn-primary" onclick="sendGameData()" id="submitBtn">
+                <i class="fas fa-paper-plane"></i> Submit Score
+            </button>
+        </div>
+    </div>
+    
+    <!-- Sound toggle -->
+    <div class="sound-toggle" onclick="toggleSound()" id="soundToggle">
+        <i class="fas fa-volume-up" id="soundIcon"></i>
+    </div>
+    
+    <!-- Toast notifications -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- Audio elements -->
+    <audio id="clickSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="correctSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="wrongSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="winSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-trumpet-2018.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="loseSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sad-game-over-trombone-471.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
