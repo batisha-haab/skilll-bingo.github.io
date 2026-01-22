@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Skill Bingo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h2>🧠 Skill Bingo</h2>
+<div id="grid"></div>
+<script src="game.js"></script>
+</body>
+</html>
