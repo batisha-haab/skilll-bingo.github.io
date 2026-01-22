@@ -11,6 +11,11 @@ let currentTarget = null;
 let timeLeft = 30;
 let gameOver = false;
 
+// ----- ADD THE SIGN RESULT FUNCTION -----
+function signResult(data) {
+  return btoa(JSON.stringify(data)).slice(0, 16);
+}
+
 // Generate grid
 function generateGrid() {
   numbers = [];
@@ -64,21 +69,22 @@ function countdown() {
   }, 1000);
 }
 
+// ----- UPDATED ENDGAME FUNCTION -----
 function endGame(win) {
   gameOver = true;
-  if (win) {
-    tg.sendData(JSON.stringify({
-      result: "WIN",
-      time: timeLeft,
-      marks: marked.size
-    }));
-    statusEl.textContent = "🏆 YOU WIN!";
-  } else {
-    tg.sendData(JSON.stringify({
-      result: "LOSE"
-    }));
-    statusEl.textContent = "❌ YOU LOST";
-  }
+
+  const payload = {
+    result: win ? "WIN" : "LOSE",
+    time: timeLeft,
+    marks: marked.size,
+    mode: new URLSearchParams(window.location.search).get("mode") || "normal"
+  };
+
+  payload.sig = signResult(payload);
+
+  tg.sendData(JSON.stringify(payload));
+
+  statusEl.textContent = win ? "🏆 YOU WIN!" : "❌ YOU LOST";
   setTimeout(() => tg.close(), 1500);
 }
 
