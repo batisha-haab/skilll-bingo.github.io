@@ -1,4 +1,4 @@
-// game.js - Fixed Bingo Logic
+// game.js - Fixed Bingo Logic with Target Numbers
 
 let tg;
 try {
@@ -32,8 +32,6 @@ let loadingEl = document.getElementById("loading");
 let submitBtn = document.getElementById("submitBtn");
 let toastEl = document.getElementById("toast");
 let particlesEl = document.getElementById("particles");
-let gameTypeSelector = document.getElementById("gameTypeSelector");
-let gameTitle = document.getElementById("gameTitle");
 
 // Audio elements
 let clickSound = document.getElementById("clickSound");
@@ -53,7 +51,7 @@ let gameOver = false;
 let timerInterval = null;
 let isSoundEnabled = true;
 let gameMode = "free";
-let gameType = "bingo"; // "bingo" or "speedmatch"
+let gameType = "bingo";
 
 // BINGO CONSTANTS
 const BINGO_COLUMNS = {
@@ -87,11 +85,9 @@ const WINNING_PATTERNS = [
 function initializeGame() {
     const urlParams = new URLSearchParams(window.location.search);
     gameMode = urlParams.get("mode") || "free";
-    gameType = urlParams.get("game") || "bingo";
     
     gameModeEl.textContent = gameMode.toUpperCase();
     modeDisplayEl.textContent = gameMode.toUpperCase();
-    gameTitle.textContent = gameType === "bingo" ? "🎯 Skill Bingo" : "⚡ Speed Match";
     
     createParticles();
     
@@ -104,12 +100,7 @@ function initializeGame() {
         console.log('Music error:', error);
     }
     
-    if (gameType === "bingo") {
-        generateBingoCard();
-    } else {
-        generateSpeedMatchGrid();
-    }
-    
+    generateBingoCard();
     startTimer();
     
     setTimeout(() => {
@@ -166,41 +157,43 @@ function generateBingoCard() {
             grid.appendChild(cell);
         }
     }
+    
+    // Set first target number
+    nextTarget();
 }
 
-function generateSpeedMatchGrid() {
-    numbers = [];
-    grid.innerHTML = "";
-    grid.className = "grid speed-grid";
+function nextTarget() {
+    if (gameOver) return;
     
-    // Generate 16 random numbers (4x4 grid)
-    for (let i = 1; i <= 16; i++) {
-        numbers.push(Math.floor(Math.random() * 50) + 1);
+    // Get all unmarked numbers (excluding FREE)
+    const available = numbers.filter(num => 
+        num !== "FREE" && !marked.has(num)
+    );
+    
+    if (available.length === 0) {
+        // All numbers marked - check for win
+        if (checkBingoWin()) {
+            endGame(true);
+        }
+        return;
     }
     
-    numbers.forEach((num, index) => {
-        const cell = document.createElement("div");
-        cell.className = "cell speed-cell";
-        cell.dataset.number = num;
-        cell.dataset.index = index;
-        cell.textContent = num;
-        cell.onclick = () => tapSpeedCell(num, cell);
-        grid.appendChild(cell);
+    // Select random target from available numbers
+    currentTarget = available[Math.floor(Math.random() * available.length)];
+    targetNumberEl.textContent = currentTarget;
+    statusEl.innerHTML = `Tap this number: <span class="target-highlight">${currentTarget}</span>`;
+    
+    // Highlight the target number in the grid
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.remove('target-cell');
+        if (parseInt(cell.dataset.number) === currentTarget) {
+            cell.classList.add('target-cell');
+        }
     });
 }
 
 function checkBingoWin() {
     const cells = document.querySelectorAll('.cell');
-    const markedNumbers = new Set();
-    
-    cells.forEach(cell => {
-        if (cell.classList.contains('active')) {
-            const num = cell.dataset.number;
-            if (num !== "FREE") {
-                markedNumbers.add(parseInt(num));
-            }
-        }
-    });
     
     // Check each winning pattern
     for (let pattern of WINNING_PATTERNS) {
@@ -230,7 +223,7 @@ function checkBingoWin() {
 }
 
 function tapCell(num, cell, row, col) {
-    if (gameOver || gameType !== "bingo") return;
+    if (gameOver) return;
     
     playSound(clickSound);
     
@@ -239,7 +232,9 @@ function tapCell(num, cell, row, col) {
         return;
     }
     
-    if (!marked.has(num)) {
+    // Check if this is the target number
+    if (num === currentTarget && !marked.has(num)) {
+        // Correct tap
         marked.add(num);
         cell.classList.add("active");
         playSound(correctSound);
@@ -249,66 +244,36 @@ function tapCell(num, cell, row, col) {
         // Check for BINGO!
         if (checkBingoWin()) {
             endGame(true);
-        }
-        
-        // Auto-mark next target if in target mode
-        if (currentTarget && num === currentTarget) {
-            nextTarget();
-        }
-    }
-}
-
-function tapSpeedCell(num, cell) {
-    if (gameOver || gameType !== "speedmatch") return;
-    
-    playSound(clickSound);
-    
-    if (num === currentTarget && !marked.has(num)) {
-        marked.add(num);
-        score++;
-        scoreEl.textContent = score;
-        
-        cell.classList.add("active");
-        playSound(correctSound);
-        
-        if (score >= 10) {
-            endGame(true);
         } else {
+            // Get next target
             nextTarget();
         }
     } else if (!marked.has(num)) {
+        // Wrong tap - penalty
         cell.classList.add("wrong");
         playSound(wrongSound);
         
+        // Time penalty based on mode
         const penalty = gameMode === 'vip' ? 3 : 2;
         timeLeft = Math.max(0, timeLeft - penalty);
         timerEl.textContent = timeLeft;
         
+        // Show penalty feedback
+        const penaltyEl = document.createElement('div');
+        penaltyEl.textContent = `-${penalty}s`;
+        penaltyEl.style.position = 'absolute';
+        penaltyEl.style.color = '#ef4444';
+        penaltyEl.style.fontWeight = 'bold';
+        penaltyEl.style.animation = 'floatUp 1s ease-out forwards';
+        cell.appendChild(penaltyEl);
+        
         setTimeout(() => {
             cell.classList.remove("wrong");
-        }, 500);
+            if (penaltyEl.parentNode) {
+                penaltyEl.remove();
+            }
+        }, 1000);
     }
-}
-
-function nextTarget() {
-    if (gameOver) return;
-    
-    if (gameType === "bingo") {
-        // For bingo, we don't use targets
-        return;
-    }
-    
-    // For speed match, generate random target
-    const available = numbers.filter(num => !marked.has(num));
-    
-    if (available.length === 0) {
-        endGame(true);
-        return;
-    }
-    
-    currentTarget = available[Math.floor(Math.random() * available.length)];
-    targetNumberEl.textContent = currentTarget;
-    statusEl.innerHTML = `Find: <span class="target-highlight">${currentTarget}</span>`;
 }
 
 function startTimer() {
@@ -350,7 +315,7 @@ function endGame(isWin) {
     playSound(isWin ? winSound : loseSound);
     
     if (isWin) {
-        statusEl.textContent = gameType === "bingo" ? "🏆 BINGO! 🏆" : "🏆 VICTORY! 🏆";
+        statusEl.textContent = "🏆 BINGO! 🏆";
         statusEl.className = "status-win";
         celebrateVictory();
     } else {
@@ -361,7 +326,7 @@ function endGame(isWin) {
     submitBtn.disabled = false;
     submitBtn.style.opacity = "1";
     
-    localStorage.removeItem('skillBingoState');
+    localStorage.removeItem('skillGameState');
     
     setTimeout(() => {
         showToast(isWin ? `You won with ${timeLeft}s remaining!` : "Time's up! Try again.", isWin ? "success" : "error");
@@ -404,13 +369,13 @@ async function sendGameData() {
         return;
     }
     
-    const isWin = gameType === "bingo" ? checkBingoWin() : score >= 10;
+    const isWin = checkBingoWin();
     
     const payload = {
-        game_type: gameType,
+        game_type: "bingo",
         result: isWin ? "WIN" : "LOSE",
         time: timeLeft,
-        marks: marked.size,
+        marks: marked.size - 1, // Subtract FREE space
         mode: gameMode,
         score: score,
         timestamp: Date.now(),
@@ -441,7 +406,7 @@ async function sendGameData() {
 }
 
 function restartGame() {
-    if (!gameOver && marked.size > 0) {
+    if (!gameOver && marked.size > 1) { // More than just FREE space
         tg.showPopup({
             title: "Restart Game?",
             message: "Are you sure you want to restart? Your current progress will be lost.",
@@ -461,6 +426,8 @@ function restartGame() {
 
 function resetGame() {
     marked.clear();
+    // Add FREE space back
+    marked.add("FREE");
     currentTarget = null;
     timeLeft = 30;
     score = 0;
@@ -470,19 +437,14 @@ function resetGame() {
     scoreEl.textContent = score;
     timerEl.style.background = 'linear-gradient(45deg, #ef4444, #f59e0b)';
     timerEl.style.animation = 'pulse 2s infinite';
-    statusEl.textContent = gameType === "bingo" ? "Mark numbers to get BINGO!" : "Match the target numbers!";
+    statusEl.innerHTML = 'Tap the number: <span id="targetNumber">0</span>';
     statusEl.className = "";
     targetNumberEl.textContent = "0";
     submitBtn.disabled = true;
     submitBtn.style.opacity = "0.5";
     submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Score';
     
-    if (gameType === "bingo") {
-        generateBingoCard();
-    } else {
-        generateSpeedMatchGrid();
-        nextTarget();
-    }
+    generateBingoCard();
     
     if (timerInterval) clearInterval(timerInterval);
     startTimer();
@@ -499,10 +461,12 @@ function toggleSound() {
         icon.className = "fas fa-volume-up";
         toggle.style.background = "rgba(59, 130, 246, 0.8)";
         showToast("Sound enabled", "success");
+        bgMusic.play().catch(e => console.log('Music play failed:', e));
     } else {
         icon.className = "fas fa-volume-mute";
         toggle.style.background = "rgba(239, 68, 68, 0.8)";
         showToast("Sound disabled", "error");
+        bgMusic.pause();
     }
 }
 
@@ -575,11 +539,7 @@ function restoreGameState() {
                 score = state.score || 0;
                 gameOver = state.gameOver || false;
                 
-                if (gameType === "bingo") {
-                    generateBingoCard();
-                } else {
-                    generateSpeedMatchGrid();
-                }
+                generateBingoCard();
                 
                 if (currentTarget) {
                     targetNumberEl.textContent = currentTarget;
@@ -588,7 +548,7 @@ function restoreGameState() {
                 scoreEl.textContent = score;
                 
                 if (gameOver) {
-                    endGame(score >= (gameType === "bingo" ? 5 : 10));
+                    endGame(score >= 5);
                 }
                 
                 showToast("Game restored from previous session", "success");
