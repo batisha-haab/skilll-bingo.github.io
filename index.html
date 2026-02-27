@@ -3,26 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎯 Skill Bingo</title>
+    <title>🎮 Skill Games</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
+    <style>
+        .game-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        .game-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.8);
+            color: #94a3b8;
+            border: 2px solid transparent;
+        }
+        
+        .game-btn.active {
+            background: linear-gradient(45deg, #3b82f6, #6366f1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-2px);
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .grid.bingo-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        
+        .grid.speed-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .cell[data-letter]::before {
+            content: attr(data-letter);
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .target-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        @keyframes winPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px gold; }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px gold; }
+        }
+    </style>
 </head>
 <body>
-    <!-- Animated background particles -->
     <div class="particles" id="particles"></div>
     
-    <!-- Loading overlay -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
-        <div class="loading-text">Loading Skill Bingo...</div>
+        <div class="loading-text">Loading Skill Games...</div>
     </div>
     
     <div class="container">
         <div class="header">
-            <h1>🎯 Skill Bingo</h1>
-            <p class="subtitle">Tap the correct numbers as fast as you can!</p>
+            <h1 id="gameTitle">🎯 Skill Bingo</h1>
+            <p class="subtitle">Choose your game and test your skills!</p>
+            
+            <div class="game-selector">
+                <button class="game-btn active" onclick="selectGame('bingo')" id="bingoBtn">🎯 BINGO</button>
+                <button class="game-btn" onclick="selectGame('speedmatch')" id="speedBtn">⚡ SPEED MATCH</button>
+            </div>
             
             <div class="game-info">
                 <div class="info-box">
@@ -40,9 +107,12 @@
             </div>
         </div>
         
-        <div id="grid"></div>
+        <div id="grid" class="grid bingo-grid"></div>
         
-        <div id="status">Tap the number: <span id="targetNumber">0</span></div>
+        <div class="target-section">
+            <div id="status">Mark numbers to get BINGO!</div>
+            <div id="targetNumber">0</div>
+        </div>
         
         <div class="game-mode">
             Game Mode: <span id="modeDisplay">FREE</span>
@@ -58,15 +128,12 @@
         </div>
     </div>
     
-    <!-- Sound toggle -->
     <div class="sound-toggle" onclick="toggleSound()" id="soundToggle">
         <i class="fas fa-volume-up" id="soundIcon"></i>
     </div>
     
-    <!-- Toast notifications -->
     <div class="toast" id="toast"></div>
     
-    <!-- Audio elements -->
     <audio id="clickSound" preload="auto">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
     </audio>
@@ -88,5 +155,12 @@
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="game.js"></script>
+    <script>
+        function selectGame(type) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('game', type);
+            window.location.search = urlParams.toString();
+        }
+    </script>
 </body>
 </html>
