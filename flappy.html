@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐦 Flappy Telegram</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: manipulation;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .score-box {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .mode-badge {
+            background: rgba(245, 158, 11, 0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            z-index: 20;
+        }
+        
+        .overlay.hidden {
+            display: none;
+        }
+        
+        .overlay h2 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .overlay p {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            background: linear-gradient(45deg, #3b82f6, #6366f1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            touch-action: manipulation;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .game-over-stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px;
+            text-align: center;
+        }
+        
+        .stat {
+            color: white;
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+        
+        .stat span {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(59, 130, 246, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 30;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            touch-action: manipulation;
+        }
+        
+        .sound-toggle i {
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .submit-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            width: auto;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            z-index: 30;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+        
+        .submit-btn:not(:disabled) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 197, 94, 0.3);
+        }
+        
+        @media (max-width: 480px) {
+            .btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+            
+            .stat {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <div class="header">
+            <div class="score-box">Score: <span id="score">0</span></div>
+            <div class="mode-badge" id="gameMode">FREE</div>
+        </div>
+        
+        <div class="overlay" id="startScreen">
+            <h2>🐦 FLAPPY TELEGRAM</h2>
+            <p>Tap or Space to fly</p>
+            <button class="btn" id="startBtn">Start Game</button>
+        </div>
+        
+        <div class="overlay hidden" id="gameOverScreen">
+            <h2>GAME OVER</h2>
+            <div class="game-over-stats">
+                <div class="stat">Score: <span id="finalScore">0</span></div>
+                <div class="stat">Best: <span id="highScore">0</span></div>
+            </div>
+            <button class="btn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+    
+    <button class="sound-toggle" id="soundToggle">
+        <i class="fas fa-volume-up"></i>
+    </button>
+    
+    <button class="submit-btn" id="submitBtn" onclick="sendGameData()" disabled>
+        <i class="fas fa-paper-plane"></i> Submit Score
+    </button>
+    
+    <!-- Audio elements -->
+    <audio id="jumpSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="scoreSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="hitSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameOverSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sad-game-over-trombone-471.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="flappy.js"></script>
+</body>
+</html>
